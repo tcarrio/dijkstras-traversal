@@ -7,20 +7,13 @@ import java.util.stream.Collectors;
 public class Paths{
 
     Path[] tentativePaths;
-    Boolean[] vertexVisited;
     PriorityQueue<Integer> searchQueue;
     Graph g;
     Integer startVertex;
 
     public Paths(Graph g, Integer startVertex){
-
-        //System.out.printf("The graph has %d vertices",g.getVertexCount());
-
         // create a list of tentative distances for each vertex
         tentativePaths = new Path[g.getVertexCount()+1];
-
-        // create a set of visited nodes, which I will use an array of booleans for since O(1) access
-        vertexVisited = new Boolean[g.getVertexCount()+1];
 
         // create a priority queue for sorted by lowest tentative distance
         searchQueue = new PriorityQueue<Integer>(g.getVertexCount()+1,new VertexComp());
@@ -28,12 +21,10 @@ public class Paths{
         // fill em up
         for(int i = 0; i< tentativePaths.length; i++){
             tentativePaths[i]=new Path();
-            vertexVisited[i]=false;
         }
 
         // set the default values on starting vertex
         tentativePaths[startVertex]=new Path(0);
-        vertexVisited[startVertex]=true;
 
         for(int i=0; i<tentativePaths.length; i++){
             searchQueue.add(i);
@@ -44,7 +35,6 @@ public class Paths{
     }
 
     public void applyRelaxation(Integer thisVertexId){
-        //System.out.printf("Checking for %d...\n",thisVertexId);
         for(Graph.Vertex targetVertex : g.getAdj(thisVertexId)){
 
             // put data in local variables
@@ -60,9 +50,8 @@ public class Paths{
 
             if(tempDistance<tentativePaths[targetId].getDistance()){
                 // make a new object from this to avoid modifying the referenced list
-                LinkedList<Integer> newPath = (LinkedList<Integer>)tentativePaths[thisVertexId].getPath().clone();
-                newPath.add(thisVertexId);
-                tentativePaths[targetId]=new Path(tempDistance,newPath);
+                tentativePaths[targetId].setDistance(tempDistance);
+                tentativePaths[targetId].setPreviousVertex(thisVertexId);
 
                 // replace the old vertex location in the priority queue since it may have moved up
                 searchQueue.remove(targetId);
@@ -91,15 +80,15 @@ public class Paths{
     public class Path {
 
         private Integer distance;
-        private LinkedList<Integer> path;
+        private Integer previousVertex;
 
-        public Path(Integer distance, LinkedList<Integer> path){
+        public Path(Integer distance, Integer previousId){
             this.distance = distance;
-            this.path = path;
+            this.previousVertex = previousId;
         }
 
         public Path(Integer distance){
-            this(distance, new LinkedList<Integer>());
+            this(distance, null);
         }
 
         public Path(){
@@ -115,11 +104,21 @@ public class Paths{
         }
 
         public LinkedList<Integer> getPath(){
-            return path;
+            Integer prev = previousVertex;
+            LinkedList<Integer> pathOfVertexes = new LinkedList<>();
+            while(prev != null){
+                pathOfVertexes.addFirst(prev);
+                prev = tentativePaths[prev].getPreviousVertex();
+            }
+            return pathOfVertexes;
         }
 
-        public void setPath(LinkedList<Integer> path){
-            this.path = path;
+        public Integer getPreviousVertex(){
+            return previousVertex;
+        }
+
+        public void setPreviousVertex(Integer previousVertex){
+            this.previousVertex = previousVertex;
         }
     }
 
