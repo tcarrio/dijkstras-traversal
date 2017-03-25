@@ -8,9 +8,8 @@ public class Paths{
 
     Path[] tentativePaths;
     Boolean[] vertexVisited;
-    ArrayList<Integer> searchQueue;
+    PriorityQueue<Integer> searchQueue;
     Graph g;
-    VertexComp vertexSorter;
     Integer startVertex;
 
     public Paths(Graph g, Integer startVertex){
@@ -18,35 +17,30 @@ public class Paths{
         //System.out.printf("The graph has %d vertices",g.getVertexCount());
 
         // create a list of tentative distances for each vertex
-        tentativePaths = new Path[g.mVertexCount+1];
+        tentativePaths = new Path[g.getVertexCount()+1];
 
         // create a set of visited nodes, which I will use an array of booleans for since O(1) access
-        vertexVisited = new Boolean[g.mVertexCount+1];
+        vertexVisited = new Boolean[g.getVertexCount()+1];
 
         // create a priority queue for sorted by lowest tentative distance
-        //searchQueue = new PriorityQueue<Integer>(g.mVertexCount+1,new VertexComp());
-        searchQueue = new ArrayList<Integer>(g.getVertexCount());
+        searchQueue = new PriorityQueue<Integer>(g.getVertexCount()+1,new VertexComp());
 
         // fill em up
         for(int i = 0; i< tentativePaths.length; i++){
             tentativePaths[i]=new Path();
             vertexVisited[i]=false;
-            searchQueue.add(i);
         }
 
         // set the default values on starting vertex
         tentativePaths[startVertex]=new Path(0);
         vertexVisited[startVertex]=true;
 
-        // set up sorting
-        vertexSorter = new VertexComp();
-        Collections.sort(searchQueue,vertexSorter);
-
+        for(int i=0; i<tentativePaths.length; i++){
+            searchQueue.add(i);
+        }
 
         this.g = g;
         this.startVertex = startVertex;
-
-        //System.out.printf("The first in the queue is %d\n",searchQueue.get(0));
     }
 
     public void applyRelaxation(Integer thisVertexId){
@@ -69,13 +63,16 @@ public class Paths{
                 LinkedList<Integer> newPath = (LinkedList<Integer>)tentativePaths[thisVertexId].getPath().clone();
                 newPath.add(thisVertexId);
                 tentativePaths[targetId]=new Path(tempDistance,newPath);
+
+                // replace the old vertex location in the priority queue since it may have moved up
+                searchQueue.remove(targetId);
+                searchQueue.add(targetId);
             }
         }
-        Collections.sort(searchQueue,vertexSorter);
     }
 
     public Integer getNextVertex(){
-        return (searchQueue.size()>0)?searchQueue.remove(0):null;
+        return searchQueue.poll();
     }
 
     public void printShortestPath(Integer vId){
